@@ -149,19 +149,29 @@ def server_config():
         clear_screen()
         show_banner()
         print(f"{Colors.YELLOW}[ Server Configuration ]{Colors.END}")
-        print(f"1. Mode: {Colors.CYAN}{config['server_settings']['mode']}{Colors.END}")
-        print(f"2. Local URL: {Colors.CYAN}{config['server_settings']['local_url']}{Colors.END}")
-        print(f"3. Custom URL: {Colors.CYAN}{config['server_settings']['custom_url']}{Colors.END}")
-        print(f"0. Back")
+        print(f"Current Target: {Colors.CYAN}{config['server_settings']['local_url'] if config['server_settings']['mode'] == 'local' else config['server_settings']['custom_url']}{Colors.END}")
+        print(f"Current Mode: {Colors.PURPLE}{config['server_settings']['mode'].upper()}{Colors.END}\n")
+        
+        print(f"{Colors.GREEN}[1]{Colors.END} Switch to LOCAL Server (127.0.0.1:5000)")
+        print(f"{Colors.GREEN}[2]{Colors.END} Set CUSTOM Server URL (Any Link)")
+        print(f"{Colors.GREEN}[3]{Colors.END} Edit Local Server URL")
+        print(f"{Colors.RED}[0]{Colors.END} Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Server > {Colors.END}")
         
         if choice == '1':
-            config['server_settings']['mode'] = "local" if config['server_settings']['mode'] == "custom" else "custom"
+            config['server_settings']['mode'] = "local"
+            print(f"{Colors.GREEN}[✓] Switched to Local Server Mode.{Colors.END}")
+            time.sleep(1)
         elif choice == '2':
-            config['server_settings']['local_url'] = input("Enter Local URL: ")
+            new_url = input(f"{Colors.YELLOW}Enter any server URL (e.g., https://api.target.com): {Colors.END}")
+            if new_url:
+                config['server_settings']['custom_url'] = new_url
+                config['server_settings']['mode'] = "custom"
+                print(f"{Colors.GREEN}[✓] Custom Server URL set and activated.{Colors.END}")
+                time.sleep(1)
         elif choice == '3':
-            config['server_settings']['custom_url'] = input("Enter Custom URL: ")
+            config['server_settings']['local_url'] = input(f"{Colors.YELLOW}Enter Local URL: {Colors.END}")
         elif choice == '0':
             break
         save_config(config)

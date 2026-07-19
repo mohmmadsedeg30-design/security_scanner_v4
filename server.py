@@ -1,53 +1,49 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-╔══════════════════════════════════════════════════════════════════╗
-║     ETHICAL SECURITY SCANNER - TARGET SERVER v4.0              ║
-║     سيرفر هدف بسيط للتدريب الأخلاقي                            ║
-╚══════════════════════════════════════════════════════════════════╝
-"""
-
 from flask import Flask, request, jsonify
 import time
 
 app = Flask(__name__)
 
-# قاعدة بيانات وهمية
-VALID_ACCOUNTS = {
-    "admin@example.com": "Welcome@2026",
-    "user1@test.com": "password123",
-    "+966500000002": "admin2026"
+# Mock Database for testing (Matches default config.json)
+VALID_CREDENTIALS = {
+    "admin@example.com": "password123",
+    "security@internal.net": "admin@2024",
+    "test-user@nexus.io": "nexus_secure",
+    "+1234567890": "123456"
 }
 
 @app.route('/')
 def home():
     return jsonify({
-        "status": "ONLINE",
-        "version": "4.0",
-        "message": "🎯 Target Server - Ethical Scanner Lab"
+        "status": "online",
+        "message": "Nexus Local Training Server is running!",
+        "version": "5.0"
     })
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json or {}
-    username = data.get("username", "")
-    password = data.get("password", "")
-
-    if username in VALID_ACCOUNTS and VALID_ACCOUNTS[username] == password:
+    username = data.get('username')
+    password = data.get('password')
+    
+    # Simulate processing delay
+    time.sleep(0.1)
+    
+    if username in VALID_CREDENTIALS and VALID_CREDENTIALS[username] == password:
         return jsonify({
-            "status": "SUCCESS",
-            "message": f"✅ Access Granted: {username}",
-            "timestamp": time.strftime("%H:%M:%S")
+            "status": "success",
+            "message": f"Welcome back, {username}!",
+            "token": "mock-session-token-12345"
         }), 200
     else:
         return jsonify({
-            "status": "FAILED",
-            "message": "❌ Invalid Credentials"
+            "status": "error",
+            "message": "Invalid credentials. Access Denied."
         }), 401
 
 if __name__ == '__main__':
-    print("\n" + "="*55)
-    print("  🎯 TARGET SERVER - Ethical Scanner Lab v4.0")
-    print("  🚀 http://127.0.0.1:5000")
-    print("="*55 + "\n")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    print("\n" + "="*50)
+    print("  NEXUS LOCAL TRAINING SERVER v5.0")
+    print("  Running on: http://127.0.0.1:5000")
+    print("  Endpoints: /login [POST]")
+    print("="*50 + "\n")
+    app.run(host='0.0.0.0', port=5000)
