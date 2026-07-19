@@ -8,11 +8,11 @@ Password Spraying is a type of brute-force attack where a malicious actor attemp
 **This tool is built to simulate this technique in a controlled, ethical environment.**
 
 ## ✨ Features
-- **Interactive UI**: Clean and colorful terminal interface (ANSI Colors).
-- **Spray Engine**: Specifically designed to test common passwords across multiple targets.
-- **ASCII Art**: Professional "NEXUS" startup banner.
-- **Full Customization**: Modify target lists (emails, phones), password lists, and server settings directly from the menu.
-- **Config Persistence**: All settings are saved in `config.json`.
+- **High-Efficiency Engine**: Uses **Multi-threading** to test multiple targets simultaneously.
+- **Stealth Mode**: Features **Random User-Agents** and **Smart Delays** to simulate human-like behavior and bypass simple rate limiting.
+- **Interactive UI**: Clean and colorful terminal interface (ANSI Colors) with professional ASCII art.
+- **Full Customization**: Easily manage targets, passwords, and server settings via the interactive menu.
+- **Advanced Configuration**: Fine-tune threads, delays, and more directly from the app.
 
 ## 📁 File Structure
 | File | Description |

@@ -1,14 +1,14 @@
 {
     "lab_info": {
-        "name": "Nexus Security Suite",
-        "version": "5.0",
+        "name": "Nexus High-Efficiency Spray Lab",
+        "version": "6.0",
         "author": "Nexus Team"
     },
     "server_settings": {
         "mode": "local",
         "local_url": "http://127.0.0.1:5000",
         "custom_url": "",
-        "timeout": 5
+        "timeout": 10
     },
     "targets": {
         "emails": [
@@ -17,21 +17,24 @@
             "test-user@nexus.io"
         ],
         "phones": [
-            "+1234567890",
-            "+966500000000",
-            "+201000000000"
+            "+1234567890"
         ]
     },
     "passwords_to_test": [
         "123456",
         "password123",
         "admin@2024",
-        "nexus_secure",
-        "qwerty"
+        "nexus_secure"
     ],
+    "advanced_settings": {
+        "threads": 5,
+        "smart_delay": [0.1, 0.5],
+        "random_user_agents": true,
+        "proxy_enabled": false,
+        "proxies": [],
+        "max_retries": 3
+    },
     "scan_settings": {
-        "delay_between_requests": 0.5,
-        "max_attempts": 10,
         "show_full_response": false,
         "verbose": true
     }
