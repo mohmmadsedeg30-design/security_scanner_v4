@@ -1,11 +1,11 @@
 {
     "lab_info": {
-        "name": "Nexus Universal Spray Lab",
-        "version": "7.0",
+        "name": "Nexus Elite Spraying Suite",
+        "version": "8.0",
         "author": "Nexus Team"
     },
     "server_settings": {
-        "mode": "local",
+        "mode": "custom",
         "local_url": "http://127.0.0.1:5000",
         "custom_url": "http://testphp.vulnweb.com",
         "login_path": "/login.php",
@@ -14,16 +14,10 @@
         "timeout": 10
     },
     "targets": {
-        "emails": [
-            "test",
-            "admin"
-        ],
+        "emails": ["test", "admin"],
         "phones": []
     },
-    "passwords_to_test": [
-        "test",
-        "admin"
-    ],
+    "passwords_to_test": ["test", "admin", "123456"],
     "advanced_settings": {
         "threads": 5,
         "smart_delay": [0.1, 0.5],
