@@ -1,50 +1,48 @@
-# 🔍 Ethical Security Scanner v4.0
+# 🛡️ Nexus Security Suite v5.0
 
-سكربت فحص أمني تفاعلي للتدريب الأخلاقي.
+A professional, interactive, and highly customizable ethical security scanner for educational and training purposes.
 
-## 📁 الملفات
+## ✨ Features
+- **Interactive UI**: Clean and colorful terminal interface (ANSI Colors).
+- **ASCII Art**: Professional startup banner.
+- **Full Customization**: Modify targets (emails, phones), passwords, and server settings directly from the menu.
+- **Flexible Modes**: Switch between local lab testing and custom remote targets.
+- **Config Driven**: All settings are saved in `config.json` for persistence.
 
-| الملف | الوصف |
+## 📁 File Structure
+| File | Description |
 |-------|-------|
-| `config.json` | إعدادات الأهداف والسيرفر |
-| `server.py` | سيرفر هدف بسيط للتدريب المحلي |
-| `scanner.py` | السكربت التفاعلي الرئيسي |
+| `config.json` | Persistent configuration for targets and settings |
+| `scanner.py` | Main interactive scanner engine |
+| `server.py` | Local training server (Flask) |
 
-## 🚀 التشغيل
+## 🚀 Installation & Usage
 
+### 📱 Termux
 ```bash
-# تثبيت المتطلبات
+pkg update && pkg upgrade -y
+pkg install python git -y
+git clone https://github.com/mohmmadsedeg30-design/security_scanner_v4.git
+cd security_scanner_v4
 pip install flask requests
+python scanner.py
+```
 
-# للسيرفر المحلي فقط
-python3 server.py
-
-# السكربت الرئيسي
+### 💻 Ubuntu
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-pip git -y
+git clone https://github.com/mohmmadsedeg30-design/security_scanner_v4.git
+cd security_scanner_v4
+pip3 install flask requests
 python3 scanner.py
 ```
 
-## ⚙️ التخصيص من داخل الواجهة
+## ⚙️ Customization
+You can easily customize the tool via:
+1. **Target Configuration**: Add/Remove emails, phones, and passwords.
+2. **Server Settings**: Change target URLs and modes.
+3. **Scan Parameters**: Adjust delays and verbose settings.
 
-```
-[3] تعديل الإعدادات
-  ├── [1] تعديل البريدات
-  ├── [2] تعديل الأرقام
-  ├── [3] تعديل كلمات المرور
-  ├── [4] تبديل السيرفر (محلي/مخصص)
-  └── [5] إعدادات الفحص
-```
-
-## 🌐 التبديل لسيرفر خارجي
-
-```
-[3] تعديل الإعدادات → [4] إعدادات السيرفر
-  اختر [2] مخصص
-  أدخل الرابط الكامل (مثال: http://192.168.1.50:5000)
-```
-
-## ⚠️ تحذير أخلاقي
-
-استخدم هذا السكربت **فقط** على:
-- مواقعك الخاصة
-- مواقع لديك إذن كتابي باختبارها
-- بيئات المحاكاة المحلية
+## ⚠️ Ethical Warning
+This tool is for **educational purposes only**. Never use it on targets without explicit written permission.
