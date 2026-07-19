@@ -49,7 +49,7 @@ def show_banner():
 ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║
 ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-{Colors.PURPLE}Professional Ethical Security Suite v5.0{Colors.END}
+{Colors.PURPLE}Professional Password Spraying Lab v5.0{Colors.END}
 {Colors.DIM}--------------------------------------------------{Colors.END}
     """
     print(banner)
@@ -80,7 +80,7 @@ def run_scan():
         return
 
     print(f"{Colors.YELLOW}Target URL: {Colors.CYAN}{url}{Colors.END}")
-    print(f"{Colors.YELLOW}Starting Scan Sequence...{Colors.END}\n")
+    print(f"{Colors.YELLOW}Initiating Password Spraying Attack (Educational Mode)...{Colors.END}\n")
     
     emails = config['targets']['emails']
     phones = config['targets']['phones']
@@ -93,7 +93,7 @@ def run_scan():
         return
 
     for target in all_targets:
-        print(f"{Colors.BLUE}[*] Target: {Colors.WHITE}{target}{Colors.END}")
+        print(f"{Colors.BLUE}[*] Spraying Target: {Colors.WHITE}{target}{Colors.END}")
         for pwd in passwords:
             sys.stdout.write(f"    {Colors.DIM}Testing: {pwd}{Colors.END}\r")
             sys.stdout.flush()
