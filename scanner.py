@@ -54,6 +54,19 @@ def show_banner():
     """
     print(banner)
 
+def main_menu():
+    clear_screen()
+    show_banner()
+    print(f"{Colors.YELLOW}[ Main Menu ]{Colors.END}")
+    print(f"{Colors.GREEN}[1]{Colors.END} Run Security Scan")
+    print(f"{Colors.GREEN}[2]{Colors.END} Target Configuration")
+    print(f"{Colors.GREEN}[3]{Colors.END} Server Settings")
+    print(f"{Colors.GREEN}[4]{Colors.END} Advanced Settings")
+    print(f"{Colors.RED}[0]{Colors.END} Exit")
+    
+    choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus > {Colors.END}")
+    return choice
+
 def spray_task(target, password, url, config):
     headers = {}
     if config['advanced_settings']['random_user_agents']:
