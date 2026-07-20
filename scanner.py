@@ -48,7 +48,7 @@ def show_banner():
 ██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║╚════██║
 ██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝███████║
 ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-{Colors.PURPLE}Nexus Elite Password Spraying Suite v8.0{Colors.END}
+{Colors.PURPLE}Nexus Elite Password Spraying Suite v8.0 (Updated){Colors.END}
 {Colors.DIM}--------------------------------------------------{Colors.END}
     """
     print(banner)
@@ -78,8 +78,10 @@ def spray_task(target, password, url, config, results):
     
     try:
         # Smart Delay
-        delay = random.uniform(config['advanced_settings']['smart_delay'][0], config['advanced_settings']['smart_delay'][1])
-        time.sleep(delay)
+        delay_range = config['advanced_settings'].get('smart_delay', [0, 0])
+        delay = random.uniform(delay_range[0], delay_range[1])
+        if delay > 0:
+            time.sleep(delay)
         
         user_field = config['server_settings'].get('user_field', 'username')
         pass_field = config['server_settings'].get('pass_field', 'password')
@@ -208,6 +210,10 @@ def stealth_config():
         print(f"2. Add Proxies (Paste List)")
         print(f"3. Random User-Agents: {Colors.CYAN}{config['advanced_settings']['random_user_agents']}{Colors.END}")
         print(f"4. Threads: {Colors.CYAN}{config['advanced_settings']['threads']}{Colors.END}")
+        
+        current_delay = config['advanced_settings'].get('smart_delay', [0, 0])
+        print(f"5. Smart Delay: {Colors.CYAN}{current_delay[0]}s - {current_delay[1]}s{Colors.END}")
+        
         print(f"0. Back")
         
         choice = input(f"\n{Colors.BOLD}{Colors.CYAN}Nexus/Stealth > {Colors.END}")
@@ -223,6 +229,12 @@ def stealth_config():
             config['advanced_settings']['random_user_agents'] = not config['advanced_settings']['random_user_agents']
         elif choice == '4':
             try: config['advanced_settings']['threads'] = int(input("Threads: "))
+            except: pass
+        elif choice == '5':
+            try:
+                min_d = float(input("Min Delay (seconds): "))
+                max_d = float(input("Max Delay (seconds): "))
+                config['advanced_settings']['smart_delay'] = [min_d, max_d]
             except: pass
         elif choice == '0':
             break
